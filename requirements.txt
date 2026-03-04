@@ -1,0 +1,6 @@
+streamlit
+openai
+SpeechRecognition
+gTTS
+pyaudio
+python-dotenv

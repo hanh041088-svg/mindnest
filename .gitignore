@@ -1,0 +1,5 @@
+key.env
+.streamlit/secrets.toml
+__pycache__/
+voice_*.mp3
+emotion_log.json
