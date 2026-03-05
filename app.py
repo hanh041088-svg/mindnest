@@ -18,8 +18,8 @@ st.set_page_config(
 # ======================
 # LOAD API KEY (AN TOÀN)
 # ======================
-api_key = os.getenv("OPENAI_API_KEY")
 
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 if not api_key:
     st.error("❌ Không tìm thấy OPENAI_API_KEY. Vui lòng kiểm tra Secrets.")
     st.stop()
@@ -293,4 +293,5 @@ if role == "teacher":
     elif risk > 0:
         st.warning("Xuất hiện dấu hiệu lo âu nhẹ.")
     else:
+
         st.success("Tình trạng lớp ổn định 💙")
