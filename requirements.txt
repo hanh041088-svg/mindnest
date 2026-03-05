@@ -4,3 +4,7 @@ SpeechRecognition
 gTTS
 pyaudio
 python-dotenv
+streamlit
+openai
+python-dotenv
+pandas
