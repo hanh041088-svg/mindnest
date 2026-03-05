@@ -18,10 +18,11 @@ st.set_page_config(
 # ======================
 # LOAD API KEY (AN TOÀN)
 # ======================
+# Lấy API key từ Streamlit Secrets
+api_key = st.secrets.get("OPENAI_API_KEY")
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 if not api_key:
-    st.error("❌ Không tìm thấy OPENAI_API_KEY. Vui lòng kiểm tra Secrets.")
+    st.error("API key chưa được cấu hình trong Secrets.")
     st.stop()
 
 client = OpenAI(api_key=api_key)
@@ -295,3 +296,4 @@ if role == "teacher":
     else:
 
         st.success("Tình trạng lớp ổn định 💙")
+
