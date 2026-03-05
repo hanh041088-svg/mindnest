@@ -41,6 +41,20 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # ======================
+# DATA STORAGE
+# ======================
+DATA_FILE = "emotion_data.json"
+
+def load_emotion_data():
+    if not os.path.exists(DATA_FILE):
+        return []
+    with open(DATA_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_emotion_data(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+# ======================
 # LOGIN PAGE
 # ======================
 if not st.session_state.logged_in:
@@ -134,22 +148,23 @@ st.markdown("""
 st.markdown("""
 <div class="warning-box">
 ⚠️ <b>Lưu ý:</b> MindNest chỉ là AI hỗ trợ.
-Nếu áp lực kéo dài, hãy tìm sự hỗ trợ từ thầy cô hoặc chuyên gia.
+Nếu áp lực kéo dài, hãy tìm sự hỗ trợ từ thầy cô hoặc chuyên gia nhé!
 </div>
 """, unsafe_allow_html=True)
 
 # ======================
 # SESSION STATE
 # ======================
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# Lưu dữ liệu vào file chung
+data = load_emotion_data()
 
-if "emotion_log" not in st.session_state:
-    st.session_state.emotion_log = []
+data.append({
+    "student": st.session_state.username,
+    "time": str(datetime.now()),
+    "emotion": emotion
+})
 
-if "student_id" not in st.session_state:
-    st.session_state.student_id = f"HS_{random.randint(100,999)}"
-
+save_emotion_data(data)
 role = st.session_state.role
 
 # ======================
@@ -267,11 +282,13 @@ if role == "teacher":
 
     st.header("📊 Dashboard sức khỏe tinh thần học sinh")
 
-    if not st.session_state.emotion_log:
-        st.info("Chưa có dữ liệu.")
-        st.stop()
+    data = load_emotion_data()
 
-    emotions = [e["emotion"] for e in st.session_state.emotion_log]
+if not data:
+    st.info("Chưa có dữ liệu từ học sinh.")
+    st.stop()
+
+emotions = [e["emotion"] for e in data]
 
     data = {
         "happy": emotions.count("happy"),
@@ -283,6 +300,10 @@ if role == "teacher":
     }
 
     st.subheader("🌈 Tổng quan cảm xúc lớp")
+for item in data[-20:]:
+    st.write(
+        f"👤 {item['student']} | {item['emotion']} | {item['time']}"
+    )
     st.bar_chart(data)
 
     risk = data["stress"] + data["crisis"]
@@ -296,3 +317,4 @@ if role == "teacher":
     else:
 
         st.success("Tình trạng lớp ổn định 💙")
+
