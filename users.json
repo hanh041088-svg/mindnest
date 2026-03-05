@@ -1,14 +1,6 @@
 {
-  "student01": {
-    "password": "123456",
-    "role": "student"
-  },
-  "student02": {
-    "password": "123456",
-    "role": "student"
-  },
-  "teacher01": {
-    "password": "admin123",
-    "role": "teacher"
-  }
+ "student1": {"password":"123","role":"student"},
+ "student2": {"password":"123","role":"student"},
+  "student3": {"password":"123","role":"student"},
+ "teacher1": {"password":"123","role":"teacher"}
 }
