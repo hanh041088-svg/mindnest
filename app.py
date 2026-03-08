@@ -61,7 +61,7 @@ if "logged_in" not in st.session_state:
 
 if not st.session_state.logged_in:
 
-    st.title("☁️ MindNest AI")
+    st.title("☁️ MindNest AI - Chatbot hỗ trợ sức khỏe tinh thần học sinh")
 
     st.subheader("Đăng nhập hệ thống")
 
@@ -132,7 +132,30 @@ AI hỗ trợ sức khỏe tinh thần học sinh
 """,unsafe_allow_html=True)
 
 role = st.session_state.role
+# ======================
+# HEADER
+# ======================
 
+st.markdown("""
+<div class="card">
+<h2>☁️ MindNest AI</h2>
+AI hỗ trợ sức khỏe tinh thần học sinh
+</div>
+""",unsafe_allow_html=True)
+
+# ======================
+# NOTICE
+# ======================
+
+st.markdown("""
+<div class="card" style="background:#fff8e6;border-left:6px solid #ffcc00;">
+<b>Lưu ý:</b> MindNest AI chỉ là công cụ hỗ trợ chia sẻ cảm xúc.<br>
+Học sinh nên tham khảo thêm ý kiến của thầy cô, ba mẹ hoặc chuyên gia khi gặp khó khăn trong cuộc sống.<br><br>
+
+<i>MindNest AI is a supportive tool for sharing emotions.  
+Students should also seek advice from teachers, parents, or mental health professionals when facing difficulties in life.</i>
+</div>
+""", unsafe_allow_html=True)
 # ======================
 # EMOTION DETECTION
 # ======================
@@ -424,3 +447,4 @@ if st.sidebar.button("Đăng xuất"):
     st.session_state.clear()
 
     st.rerun()
+
