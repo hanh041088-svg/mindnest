@@ -5,6 +5,7 @@ import random
 import tempfile
 import pandas as pd
 import plotly.express as px
+from streamlit_mic_recorder import mic_recorder
 from datetime import datetime
 from openai import OpenAI
 
@@ -222,6 +223,20 @@ Tin nhắn học sinh:
 
 # ======================
 # TTS
+def speech_to_text(audio_bytes):
+
+    with tempfile.NamedTemporaryFile(delete=False,suffix=".wav") as f:
+        f.write(audio_bytes)
+        temp_audio = f.name
+
+    with open(temp_audio,"rb") as audio_file:
+
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file
+        )
+
+    return transcript.text
 # ======================
 
 def speak_text(text):
@@ -289,7 +304,23 @@ if role=="student":
 
             st.markdown(f"<div class='chat-bot'>{msg['content']}</div>",unsafe_allow_html=True)
 
-    user_input=st.chat_input("Hãy chia sẻ cảm xúc của bạn...")
+col1, col2 = st.columns([5,1])
+
+with col1:
+    user_input = st.chat_input("Hãy chia sẻ cảm xúc của bạn...")
+
+with col2:
+    audio = mic_recorder(
+        start_prompt="🎤",
+        stop_prompt="⏹",
+        just_once=True
+    )
+
+    if audio:
+        voice_text = speech_to_text(audio["bytes"])
+        if voice_text:
+            st.info("🎤 Bạn nói: " + voice_text)
+            user_input = voice_text
 
     if user_input:
 
@@ -447,4 +478,5 @@ if st.sidebar.button("Đăng xuất"):
     st.session_state.clear()
 
     st.rerun()
+
 
