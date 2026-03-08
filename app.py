@@ -5,6 +5,7 @@ import random
 import tempfile
 import pandas as pd
 import plotly.express as px
+import streamlit.components.v1 as components
 from streamlit_mic_recorder import mic_recorder
 from datetime import datetime
 from openai import OpenAI
@@ -478,5 +479,6 @@ if st.sidebar.button("Đăng xuất"):
     st.session_state.clear()
 
     st.rerun()
+
 
 
