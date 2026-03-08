@@ -23,6 +23,18 @@ st.set_page_config(
 if "last_audio" not in st.session_state:
     st.session_state.last_audio = None
 
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+if "emotion_log" not in st.session_state:
+    st.session_state.emotion_log = []
+
+if "student_id" not in st.session_state:
+    st.session_state.student_id = f"HS_{random.randint(100,999)}"
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
 # ======================
 # LOAD API KEY
 # ======================
@@ -46,9 +58,6 @@ if not os.path.exists("users.json"):
 with open("users.json", "r", encoding="utf-8") as f:
     USERS = json.load(f)
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
 # ======================
 # LOGIN
 # ======================
@@ -68,7 +77,6 @@ if not st.session_state.logged_in:
             st.session_state.username = username
             st.session_state.role = USERS[username]["role"]
 
-            st.success("Đăng nhập thành công!")
             st.rerun()
 
         else:
@@ -152,25 +160,10 @@ st.markdown("""
 <div class="warning-box">
 
 ⚠️ <b>Lưu ý:</b> MindNest AI chỉ là công cụ hỗ trợ chia sẻ cảm xúc.  
-Học sinh nên tham khảo thêm ý kiến của <b>thầy cô, ba mẹ hoặc chuyên gia</b> khi gặp khó khăn trong cuộc sống.
+Học sinh nên tham khảo thêm ý kiến của <b>thầy cô, ba mẹ hoặc chuyên gia</b>.
 
 </div>
 """, unsafe_allow_html=True)
-
-# ======================
-# SESSION STATE
-# ======================
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-if "emotion_log" not in st.session_state:
-    st.session_state.emotion_log = []
-
-if "student_id" not in st.session_state:
-    st.session_state.student_id = f"HS_{random.randint(100,999)}"
-
-role = st.session_state.role
 
 # ======================
 # EMOTION DETECTION
@@ -181,7 +174,7 @@ def detect_emotion(text):
     prompt = f"""
 Phân loại cảm xúc học sinh.
 
-Chỉ trả về 1 từ:
+Chỉ trả về một từ:
 
 happy | sad | anxious | stress | crisis | neutral
 
@@ -189,6 +182,7 @@ Câu: {text}
 """
 
     try:
+
         res = client.responses.create(
             model="gpt-4o-mini",
             input=prompt
@@ -212,10 +206,10 @@ def ask_mindnest(user_text):
 Bạn là MindNest — AI hỗ trợ sức khỏe tinh thần học sinh.
 
 Quy tắc:
-- Luôn trả lời bằng TIẾNG VIỆT
+- Luôn trả lời bằng tiếng Việt
 - Giọng nhẹ nhàng tích cực
 - Không chẩn đoán bệnh
-- Khuyến khích học sinh nói chuyện với thầy cô hoặc cha mẹ khi cần
+- Khuyến khích học sinh nói chuyện với thầy cô hoặc cha mẹ
 """
         }
     ]
@@ -240,8 +234,8 @@ Quy tắc:
 
         return res.choices[0].message.content
 
-    except:
-        return "Xin lỗi, hệ thống đang bận."
+    except Exception as e:
+        return f"Lỗi hệ thống: {e}"
 
 # ======================
 # TEXT TO SPEECH
@@ -274,14 +268,14 @@ if len(st.session_state.messages) == 0:
 
     st.session_state.messages.append({
         "role":"assistant",
-        "content":"Chào bạn! Mình là MindNest ☁️. Nếu hôm nay bạn có điều gì muốn chia sẻ, mình luôn sẵn sàng lắng nghe."
+        "content":"Chào bạn! Mình là MindNest ☁️. Bạn muốn chia sẻ điều gì hôm nay?"
     })
 
 # ======================
 # STUDENT MODE
 # ======================
 
-if role == "student":
+if st.session_state.role == "student":
 
     st.subheader("💬 Chat với MindNest")
 
@@ -301,60 +295,7 @@ if role == "student":
                 unsafe_allow_html=True
             )
 
-    # ======================
-    # VOICE INPUT
-    # ======================
-
-    st.markdown("### 🎤 Nói chuyện với MindNest")
-
-    voice_html = """
-    <button onclick="startDictation()">🎤 Bắt đầu nói</button>
-
-    <p id="speech"></p>
-
-    <script>
-    function startDictation() {
-
-        if (window.hasOwnProperty('webkitSpeechRecognition')) {
-
-            var recognition = new webkitSpeechRecognition();
-
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
-            recognition.lang = "vi-VN";
-
-            recognition.start();
-
-            recognition.onresult = function(e) {
-
-                document.getElementById('speech').innerHTML
-                = e.results[0][0].transcript;
-
-                window.parent.postMessage(
-                {type:"streamlit:setComponentValue",
-                value:e.results[0][0].transcript},
-                "*"
-                );
-
-                recognition.stop();
-            };
-
-            recognition.onerror=function(e){
-                recognition.stop();
-            }
-
-        }
-    }
-    </script>
-    """
-
-    voice_text = st.components.v1.html(voice_html, height=120)
-
     user_input = st.chat_input("Hãy chia sẻ cảm xúc của bạn...")
-
-    if voice_text:
-        user_input = voice_text
 
     if user_input:
 
@@ -391,19 +332,17 @@ if role == "student":
 # TEACHER MODE
 # ======================
 
-if role == "teacher":
+if st.session_state.role == "teacher":
 
     st.sidebar.markdown(f"👋 Xin chào {st.session_state.username}")
 
     if st.sidebar.button("Đăng xuất"):
-
         st.session_state.clear()
         st.rerun()
 
     st.header("📊 Dashboard sức khỏe tinh thần")
 
     if not st.session_state.emotion_log:
-
         st.info("Chưa có dữ liệu.")
         st.stop()
 
@@ -427,13 +366,8 @@ if role == "teacher":
     st.subheader("🚨 Cảnh báo")
 
     if risk >= 3:
-
         st.error("Có dấu hiệu căng thẳng cao. Nên trò chuyện với học sinh.")
-
     elif risk > 0:
-
         st.warning("Xuất hiện dấu hiệu lo âu nhẹ.")
-
     else:
-
         st.success("Tình trạng lớp ổn định 💙")
