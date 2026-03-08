@@ -3,10 +3,6 @@ import os
 import json
 import random
 import tempfile
-import pandas as pd
-import plotly.express as px
-import streamlit.components.v1 as components
-from streamlit_mic_recorder import mic_recorder
 from datetime import datetime
 from openai import OpenAI
 
@@ -15,44 +11,33 @@ from openai import OpenAI
 # ======================
 
 st.set_page_config(
-    page_title="MindNest AI",
+    page_title="MindNest 🌥️",
     page_icon="☁️",
-    layout="wide"
+    layout="centered"
 )
 
 # ======================
-# API KEY
+# LOAD API KEY
 # ======================
 
-api_key = st.secrets.get("OPENAI_API_KEY")
+api_key = os.getenv("OPENAI_API_KEY")
 
 if not api_key:
-    st.error("Chưa cấu hình OPENAI_API_KEY trong Streamlit Secrets")
+    st.error("❌ Không tìm thấy OPENAI_API_KEY.")
     st.stop()
 
 client = OpenAI(api_key=api_key)
 
 # ======================
-# FILE PATH
-# ======================
-
-USER_FILE = "users.json"
-EMOTION_FILE = "emotion_data.json"
-
-if not os.path.exists(EMOTION_FILE):
-    with open(EMOTION_FILE,"w") as f:
-        json.dump([],f)
-
-# ======================
 # LOAD USERS
 # ======================
 
-with open(USER_FILE,"r",encoding="utf-8") as f:
-    USERS = json.load(f)
+if not os.path.exists("users.json"):
+    st.error("Không tìm thấy file users.json")
+    st.stop()
 
-# ======================
-# SESSION
-# ======================
+with open("users.json", "r", encoding="utf-8") as f:
+    USERS = json.load(f)
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -63,12 +48,10 @@ if "logged_in" not in st.session_state:
 
 if not st.session_state.logged_in:
 
-    st.title("☁️ MindNest AI - Chatbot hỗ trợ sức khỏe tinh thần học sinh")
-
-    st.subheader("Đăng nhập hệ thống")
+    st.title("☁️ Đăng nhập MindNest")
 
     username = st.text_input("Tên đăng nhập")
-    password = st.text_input("Mật khẩu",type="password")
+    password = st.text_input("Mật khẩu", type="password")
 
     if st.button("Đăng nhập"):
 
@@ -78,110 +61,128 @@ if not st.session_state.logged_in:
             st.session_state.username = username
             st.session_state.role = USERS[username]["role"]
 
+            st.success("Đăng nhập thành công!")
             st.rerun()
 
         else:
-
             st.error("Sai tài khoản hoặc mật khẩu")
 
     st.stop()
 
 # ======================
-# STYLE
+# BEAUTIFUL UI
 # ======================
 
 st.markdown("""
 <style>
 
-.stApp{
-background:linear-gradient(120deg,#ffd6ec,#e6ccff,#d6e4ff,#ffe6f7);
+html, body, [class*="css"] {
+    font-family: "Segoe UI";
 }
 
-.card{
-background:white;
+.stApp {
+background: linear-gradient(135deg,#ffd6ec,#e6ccff,#d6e4ff,#ffe6f7);
+background-size:400% 400%;
+animation: gradientBG 12s ease infinite;
+}
+
+@keyframes gradientBG {
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+.title-box{
+text-align:center;
 padding:20px;
-border-radius:15px;
-box-shadow:0 5px 20px rgba(0,0,0,0.1);
-margin-bottom:20px;
+border-radius:20px;
+background:rgba(255,255,255,0.9);
+box-shadow:0 8px 25px rgba(0,0,0,0.1);
+margin-bottom:15px;
 }
 
 .chat-user{
-background:#d6f5ff;
+background:linear-gradient(135deg,#a8edea,#fed6e3);
 padding:12px;
-border-radius:12px;
-margin:6px;
+border-radius:18px;
+margin:8px 0;
 }
 
 .chat-bot{
 background:white;
 padding:12px;
-border-radius:12px;
-margin:6px;
+border-radius:18px;
+margin:8px 0;
+box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+.warning-box{
+background:linear-gradient(135deg,#fff0c9,#ffe6f2);
+padding:14px;
+border-radius:16px;
+margin-top:10px;
 }
 
 </style>
-""",unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # ======================
 # HEADER
 # ======================
 
 st.markdown("""
-<div class="card">
-<h2>☁️ MindNest AI</h2>
-AI hỗ trợ sức khỏe tinh thần học sinh
-</div>
-""",unsafe_allow_html=True)
-
-role = st.session_state.role
-# ======================
-# HEADER
-# ======================
-
-st.markdown("""
-<div class="card">
-<h2>☁️ MindNest AI</h2>
-AI hỗ trợ sức khỏe tinh thần học sinh
-</div>
-""",unsafe_allow_html=True)
-
-# ======================
-# NOTICE
-# ======================
-
-st.markdown("""
-<div class="card" style="background:#fff8e6;border-left:6px solid #ffcc00;">
-<b>Lưu ý:</b> MindNest AI chỉ là công cụ hỗ trợ chia sẻ cảm xúc.<br>
-Học sinh nên tham khảo thêm ý kiến của thầy cô, ba mẹ hoặc chuyên gia khi gặp khó khăn trong cuộc sống.<br><br>
-
-<i>MindNest AI is a supportive tool for sharing emotions.  
-Students should also seek advice from teachers, parents, or mental health professionals when facing difficulties in life.</i>
+<div class="title-box">
+<h2>☁️ MindNest – Người sẻ chia cùng bạn</h2>
+<p><b>AI hỗ trợ sức khỏe tinh thần học sinh</b></p>
 </div>
 """, unsafe_allow_html=True)
+
+# ======================
+# AI DISCLAIMER
+# ======================
+
+st.markdown("""
+<div class="warning-box">
+
+⚠️ <b>Lưu ý:</b> MindNest AI chỉ là công cụ hỗ trợ chia sẻ cảm xúc.  
+Học sinh nên tham khảo thêm ý kiến của <b>thầy cô, ba mẹ hoặc chuyên gia</b> khi gặp khó khăn trong cuộc sống.
+
+</div>
+""", unsafe_allow_html=True)
+
+# ======================
+# SESSION STATE
+# ======================
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+if "emotion_log" not in st.session_state:
+    st.session_state.emotion_log = []
+
+if "student_id" not in st.session_state:
+    st.session_state.student_id = f"HS_{random.randint(100,999)}"
+
+role = st.session_state.role
+
 # ======================
 # EMOTION DETECTION
 # ======================
 
 def detect_emotion(text):
 
-    prompt=f"""
+    prompt = f"""
 Phân loại cảm xúc học sinh.
 
 Chỉ trả về 1 từ:
 
-happy
-sad
-anxious
-stress
-crisis
-neutral
+happy | sad | anxious | stress | crisis | neutral
 
 Câu: {text}
 """
 
     try:
-
-        res=client.responses.create(
+        res = client.responses.create(
             model="gpt-4o-mini",
             input=prompt
         )
@@ -189,29 +190,34 @@ Câu: {text}
         return res.output_text.strip().lower()
 
     except:
-
         return "neutral"
 
 # ======================
 # AI CHAT
 # ======================
 
-def ask_ai(text):
+def ask_mindnest(user_text):
 
-    prompt=f"""
-Bạn là AI hỗ trợ tâm lý học sinh.
+    system_prompt = """
+Bạn là MindNest — AI hỗ trợ sức khỏe tinh thần học sinh.
 
-Giọng nói nhẹ nhàng, tích cực.
-Không phán xét.
-Khuyến khích tìm sự giúp đỡ khi cần.
-
-Tin nhắn học sinh:
-{text}
+QUY TẮC:
+- Luôn trả lời bằng TIẾNG VIỆT
+- Giọng nhẹ nhàng, tích cực
+- Không chẩn đoán bệnh tâm lý
+- Khuyến khích học sinh nói chuyện với thầy cô hoặc cha mẹ khi cần
 """
+
+    history = ""
+
+    for m in st.session_state.messages:
+        history += f"{m['role']}: {m['content']}\n"
+
+    prompt = system_prompt + history + f"user: {user_text}"
 
     try:
 
-        res=client.responses.create(
+        res = client.responses.create(
             model="gpt-4o-mini",
             input=prompt
         )
@@ -219,32 +225,17 @@ Tin nhắn học sinh:
         return res.output_text
 
     except:
-
-        return "Hiện AI đang bận."
+        return "Xin lỗi, hệ thống đang bận."
 
 # ======================
-# TTS
-def speech_to_text(audio_bytes):
-
-    with tempfile.NamedTemporaryFile(delete=False,suffix=".wav") as f:
-        f.write(audio_bytes)
-        temp_audio = f.name
-
-    with open(temp_audio,"rb") as audio_file:
-
-        transcript = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=audio_file
-        )
-
-    return transcript.text
+# TEXT TO SPEECH
 # ======================
 
 def speak_text(text):
 
     try:
 
-        speech_file=tempfile.NamedTemporaryFile(delete=False,suffix=".mp3")
+        speech_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
 
         with client.audio.speech.with_streaming_response.create(
             model="gpt-4o-mini-tts",
@@ -257,228 +248,124 @@ def speak_text(text):
         return speech_file.name
 
     except:
-
         return None
 
 # ======================
-# RISK SCORE
+# GREETING
 # ======================
 
-def calculate_risk(df):
+if len(st.session_state.messages) == 0:
 
-    score=0
-
-    for e in df["emotion"]:
-
-        if e=="sad":
-            score+=1
-
-        elif e=="anxious":
-            score+=2
-
-        elif e=="stress":
-            score+=3
-
-        elif e=="crisis":
-            score+=5
-
-    return score
+    st.session_state.messages.append({
+        "role":"assistant",
+        "content":"Chào bạn! Mình là MindNest ☁️. Nếu hôm nay bạn có điều gì muốn chia sẻ, mình luôn sẵn sàng lắng nghe."
+    })
 
 # ======================
 # STUDENT MODE
 # ======================
 
-if role=="student":
+if role == "student":
 
     st.subheader("💬 Chat với MindNest")
 
-    if "messages" not in st.session_state:
-        st.session_state.messages=[]
-
     for msg in st.session_state.messages:
 
-        if msg["role"]=="user":
+        if msg["role"] == "user":
 
-            st.markdown(f"<div class='chat-user'>{msg['content']}</div>",unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='chat-user'>🙂 {msg['content']}</div>",
+                unsafe_allow_html=True
+            )
 
         else:
 
-            st.markdown(f"<div class='chat-bot'>{msg['content']}</div>",unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='chat-bot'>☁️ {msg['content']}</div>",
+                unsafe_allow_html=True
+            )
 
-col1, col2 = st.columns([5,1])
-
-with col1:
     user_input = st.chat_input("Hãy chia sẻ cảm xúc của bạn...")
-
-with col2:
-    audio = mic_recorder(
-        start_prompt="🎤",
-        stop_prompt="⏹",
-        just_once=True
-    )
-
-    if audio:
-        voice_text = speech_to_text(audio["bytes"])
-        if voice_text:
-            st.info("🎤 Bạn nói: " + voice_text)
-            user_input = voice_text
 
     if user_input:
 
-        st.session_state.messages.append({"role":"user","content":user_input})
-
-        emotion=detect_emotion(user_input)
-
-        reply=ask_ai(user_input)
-
-        st.session_state.messages.append({"role":"assistant","content":reply})
-
-        with open(EMOTION_FILE,"r") as f:
-            logs=json.load(f)
-
-        logs.append({
-
-            "student":st.session_state.username,
-            "time":str(datetime.now()),
-            "emotion":emotion
-
+        st.session_state.messages.append({
+            "role":"user",
+            "content":user_input
         })
 
-        with open(EMOTION_FILE,"w") as f:
-            json.dump(logs,f,indent=2)
+        emotion = detect_emotion(user_input)
 
-        audio=speak_text(reply)
+        st.session_state.emotion_log.append({
+            "student": st.session_state.student_id,
+            "time": datetime.now(),
+            "emotion": emotion
+        })
 
-        st.session_state.last_audio=audio
+        reply = ask_mindnest(user_input)
+
+        st.session_state.messages.append({
+            "role":"assistant",
+            "content":reply
+        })
+
+        audio = speak_text(reply)
+
+        st.session_state.last_audio = audio
 
         st.rerun()
 
-    if "last_audio" in st.session_state:
+    if "last_audio" in st.session_state and st.session_state.last_audio:
 
         st.audio(st.session_state.last_audio)
 
 # ======================
-# TEACHER DASHBOARD
+# TEACHER MODE
 # ======================
 
-if role=="teacher":
+if role == "teacher":
 
-    st.title("📊 Dashboard sức khỏe tinh thần")
+    st.sidebar.markdown(f"👋 Xin chào {st.session_state.username}")
 
-    with open(EMOTION_FILE,"r") as f:
-        data=json.load(f)
+    if st.sidebar.button("Đăng xuất"):
 
-    if not data:
+        st.session_state.clear()
+        st.rerun()
 
-        st.info("Chưa có dữ liệu học sinh.")
+    st.header("📊 Dashboard sức khỏe tinh thần")
+
+    if not st.session_state.emotion_log:
+
+        st.info("Chưa có dữ liệu.")
         st.stop()
 
-    df=pd.DataFrame(data)
+    emotions = [e["emotion"] for e in st.session_state.emotion_log]
 
-    df["time"]=pd.to_datetime(df["time"])
+    data = {
+        "happy": emotions.count("happy"),
+        "neutral": emotions.count("neutral"),
+        "sad": emotions.count("sad"),
+        "anxious": emotions.count("anxious"),
+        "stress": emotions.count("stress"),
+        "crisis": emotions.count("crisis"),
+    }
 
-    # ======================
-    # CLASS OVERVIEW
-    # ======================
+    st.subheader("🌈 Thống kê cảm xúc lớp")
 
-    col1,col2,col3,col4=st.columns(4)
+    st.bar_chart(data)
 
-    col1.metric("🙂 Happy",(df["emotion"]=="happy").sum())
-    col2.metric("😐 Neutral",(df["emotion"]=="neutral").sum())
-    col3.metric("😟 Stress",(df["emotion"]=="stress").sum())
-    col4.metric("🚨 Crisis",(df["emotion"]=="crisis").sum())
+    risk = data["stress"] + data["crisis"]
 
-    st.divider()
+    st.subheader("🚨 Cảnh báo")
 
-    st.subheader("Cảm xúc toàn lớp")
+    if risk >= 3:
 
-    st.bar_chart(df["emotion"].value_counts())
+        st.error("Có dấu hiệu căng thẳng cao. Nên trò chuyện với học sinh.")
 
-    # ======================
-    # STUDENT SELECT
-    # ======================
+    elif risk > 0:
 
-    st.subheader("👩‍🎓 Theo dõi từng học sinh")
-
-    students=df["student"].unique()
-
-    selected=st.selectbox("Chọn học sinh",students)
-
-    student_df=df[df["student"]==selected]
-
-    st.dataframe(student_df)
-
-    # ======================
-    # TIMELINE
-    # ======================
-
-    st.subheader("📈 Timeline cảm xúc")
-
-    fig=px.line(
-        student_df,
-        x="time",
-        y="emotion",
-        markers=True
-    )
-
-    st.plotly_chart(fig,use_container_width=True)
-
-    # ======================
-    # RISK SCORE
-    # ======================
-
-    risk_score=calculate_risk(student_df)
-
-    st.subheader("🧠 AI Risk Score")
-
-    st.metric("Risk Score",risk_score)
-
-    if risk_score>=10:
-
-        st.error("🔴 Nguy cơ cao")
-
-    elif risk_score>=5:
-
-        st.warning("🟡 Cần theo dõi")
+        st.warning("Xuất hiện dấu hiệu lo âu nhẹ.")
 
     else:
 
-        st.success("🟢 Ổn định")
-
-    # ======================
-    # TOP RISK
-    # ======================
-
-    st.subheader("🚨 Học sinh cần chú ý")
-
-    risk_students=[]
-
-    for s in df["student"].unique():
-
-        s_df=df[df["student"]==s]
-
-        score=calculate_risk(s_df)
-
-        risk_students.append({
-            "student":s,
-            "risk_score":score
-        })
-
-    risk_df=pd.DataFrame(risk_students)
-
-    risk_df=risk_df.sort_values("risk_score",ascending=False)
-
-    st.dataframe(risk_df)
-
-# ======================
-# LOGOUT
-# ======================
-
-if st.sidebar.button("Đăng xuất"):
-
-    st.session_state.clear()
-
-    st.rerun()
-
-
-
+        st.success("Tình trạng lớp ổn định 💙")
