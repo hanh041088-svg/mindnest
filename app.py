@@ -11,7 +11,7 @@ from openai import OpenAI
 # ======================
 
 st.set_page_config(
-    page_title="MindNest 🌥️",
+    page_title="MindNest 🌥️ - HongDucSchool",
     page_icon="☁️",
     layout="centered"
 )
@@ -91,10 +91,6 @@ if not st.session_state.logged_in:
 st.title("☁️ MindNest")
 st.caption("AI hỗ trợ sức khỏe tinh thần học sinh")
 
-st.warning(
-"⚠️ MindNest AI chỉ là công cụ hỗ trợ. "
-"Hãy tham khảo thêm ý kiến của thầy cô hoặc ba mẹ."
-)
 
 # ======================
 # AI FUNCTIONS
@@ -278,3 +274,7 @@ if user_input:
 
 if st.session_state.last_audio:
     st.audio(st.session_state.last_audio)
+st.warning(
+"⚠️ MindNest AI chỉ là công cụ hỗ trợ. "
+"Hãy tham khảo thêm ý kiến của thầy cô hoặc ba mẹ."
+)
