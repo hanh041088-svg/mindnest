@@ -5,7 +5,7 @@ import tempfile
 import pandas as pd
 from datetime import datetime
 from openai import OpenAI
-from gtts import gTTS
+from gtts import gtts
 
 # ==============================
 # PAGE CONFIG
@@ -289,3 +289,4 @@ if role=="teacher":
     st.subheader("📄 Lịch sử")
 
     st.dataframe(df_s)
+
