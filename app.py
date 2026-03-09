@@ -1,11 +1,11 @@
 import streamlit as st
 import os
 import json
-import random
 import tempfile
 import pandas as pd
 from datetime import datetime
 from openai import OpenAI
+from gtts import gTTS
 
 # ==============================
 # PAGE CONFIG
@@ -77,7 +77,7 @@ if not st.session_state.logged_in:
 
     login_btn = st.button("🚀 Đăng nhập")
 
-    if login_btn or password.endswith("\n"):
+    if login_btn:
 
         if username in USERS and USERS[username]["password"]==password:
 
@@ -95,7 +95,7 @@ if not st.session_state.logged_in:
 role = st.session_state.role
 
 # ==============================
-# CSS UI
+# CSS
 # ==============================
 st.markdown("""
 <style>
@@ -131,7 +131,7 @@ border-radius:20px!important;
 def detect_emotion(text):
 
     prompt=f"""
-Phân loại cảm xúc học sinh
+Phân loại cảm xúc học sinh:
 
 happy
 sad
@@ -142,7 +142,7 @@ neutral
 
 Câu: {text}
 
-Trả lời 1 từ.
+Chỉ trả lời 1 từ.
 """
 
     try:
@@ -164,46 +164,48 @@ Trả lời 1 từ.
 def ask_ai(text):
 
     system="""
-Bạn là MindNest AI
+Bạn là MindNest AI.
 
-Bạn hỗ trợ tâm lý học sinh
-Nói nhẹ nhàng tích cực
+Bạn là chatbot hỗ trợ sức khỏe tinh thần cho học sinh.
+Hãy nói nhẹ nhàng, tích cực, thân thiện.
+
+Nếu học sinh đang căng thẳng kéo dài hãy khuyến khích các bạn
+tìm sự giúp đỡ từ thầy cô, cha mẹ hoặc bạn bè.
 """
 
     try:
 
         r=client.responses.create(
             model="gpt-4o-mini",
-            input=system+"\n"+text
+            input=system + "\n" + text
         )
 
         return r.output_text
 
     except:
 
-        return "Xin lỗi hệ thống đang bận"
+        return "Xin lỗi, hệ thống đang bận."
 
 # ==============================
-# TTS
+# TEXT TO SPEECH
 # ==============================
 def speak(text):
 
     try:
 
-        speech=tempfile.NamedTemporaryFile(delete=False,suffix=".mp3")
+        speech = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
 
-        with client.audio.speech.with_streaming_response.create(
-            model="gpt-4o-mini-tts",
-            voice="nova",
-            input=text
-        ) as r:
+        tts = gTTS(
+            text=text,
+            lang="vi",
+            slow=False
+        )
 
-            r.stream_to_file(speech.name)
+        tts.save(speech.name)
 
         return speech.name
 
     except:
-
         return None
 
 # ==============================
@@ -214,6 +216,8 @@ if role=="student":
     st.title("☁️ MindNest AI")
 
     st.success("Xin chào 👋 MindNest luôn sẵn sàng lắng nghe bạn!")
+
+    st.info("AI là chatbot hỗ trợ sức khỏe tinh thần. Nếu áp lực kéo dài hãy nhờ đến thầy cô, ba mẹ và bạn bè nhé.")
 
     for m in st.session_state.messages:
 
@@ -242,6 +246,9 @@ if role=="student":
 
         audio=speak(reply)
 
+        if audio:
+            st.audio(audio)
+
         st.rerun()
 
 # ==============================
@@ -261,13 +268,13 @@ if role=="teacher":
 
     df=pd.DataFrame(data)
 
-    st.subheader("🌈 Tổng quan cảm xúc lớp")
+    st.subheader("🌈 Tổng quan cảm xúc")
 
     chart=df["emotion"].value_counts()
 
     st.bar_chart(chart)
 
-    st.subheader("👩‍🎓 Theo từng học sinh")
+    st.subheader("👩‍🎓 Theo học sinh")
 
     students=df["student"].unique()
 
@@ -275,7 +282,9 @@ if role=="teacher":
 
     df_s=df[df["student"]==s]
 
-    st.line_chart(df_s["emotion"].value_counts())
+    st.subheader("Biểu đồ cảm xúc")
+
+    st.bar_chart(df_s["emotion"].value_counts())
 
     st.subheader("📄 Lịch sử")
 
