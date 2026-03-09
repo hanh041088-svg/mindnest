@@ -1,11 +1,11 @@
 import streamlit as st
 import os
 import json
-import tempfile
 import pandas as pd
+import tempfile
 from datetime import datetime
 from openai import OpenAI
-from gtts import gtts
+from gtts import gTTS
 
 # ==============================
 # PAGE CONFIG
@@ -22,7 +22,7 @@ st.set_page_config(
 api_key = st.secrets.get("OPENAI_API_KEY")
 
 if not api_key:
-    st.error("Thiếu OPENAI_API_KEY trong Secrets")
+    st.error("Thiếu OPENAI_API_KEY trong secrets")
     st.stop()
 
 client = OpenAI(api_key=api_key)
@@ -37,15 +37,17 @@ if not os.path.exists(DATA_FILE):
         json.dump([],f)
 
 def save_emotion(data):
+
     with open(DATA_FILE,"r") as f:
-        old = json.load(f)
+        old=json.load(f)
 
     old.append(data)
 
     with open(DATA_FILE,"w") as f:
-        json.dump(old,f,default=str)
+        json.dump(old,f)
 
 def load_data():
+
     with open(DATA_FILE) as f:
         return json.load(f)
 
@@ -65,19 +67,17 @@ if "messages" not in st.session_state:
     st.session_state.messages=[]
 
 # ==============================
-# LOGIN PAGE
+# LOGIN
 # ==============================
 if not st.session_state.logged_in:
 
-    st.markdown("# ☁️ MindNest AI")
-    st.markdown("### Hệ thống hỗ trợ sức khỏe tinh thần học sinh")
+    st.title("☁️ MindNest AI")
+    st.subheader("Hệ thống hỗ trợ sức khỏe tinh thần học sinh")
 
-    username = st.text_input("Tên đăng nhập")
-    password = st.text_input("Mật khẩu",type="password")
+    username=st.text_input("Tên đăng nhập")
+    password=st.text_input("Mật khẩu",type="password")
 
-    login_btn = st.button("🚀 Đăng nhập")
-
-    if login_btn:
+    if st.button("Đăng nhập"):
 
         if username in USERS and USERS[username]["password"]==password:
 
@@ -88,11 +88,12 @@ if not st.session_state.logged_in:
             st.rerun()
 
         else:
+
             st.error("Sai tài khoản")
 
     st.stop()
 
-role = st.session_state.role
+role=st.session_state.role
 
 # ==============================
 # CSS
@@ -107,19 +108,15 @@ background:linear-gradient(135deg,#ffd6ec,#e6ccff,#d6e4ff);
 .chat-user{
 background:#c8f7ff;
 padding:10px;
-border-radius:12px;
+border-radius:10px;
 margin:5px;
 }
 
 .chat-bot{
 background:white;
 padding:10px;
-border-radius:12px;
+border-radius:10px;
 margin:5px;
-}
-
-button{
-border-radius:20px!important;
 }
 
 </style>
@@ -142,7 +139,7 @@ neutral
 
 Câu: {text}
 
-Chỉ trả lời 1 từ.
+Chỉ trả lời 1 từ
 """
 
     try:
@@ -165,12 +162,10 @@ def ask_ai(text):
 
     system="""
 Bạn là MindNest AI.
+Bạn hỗ trợ tâm lý học sinh.
 
-Bạn là chatbot hỗ trợ sức khỏe tinh thần cho học sinh.
-Hãy nói nhẹ nhàng, tích cực, thân thiện.
-
-Nếu học sinh đang căng thẳng kéo dài hãy khuyến khích các bạn
-tìm sự giúp đỡ từ thầy cô, cha mẹ hoặc bạn bè.
+Hãy nói nhẹ nhàng tích cực.
+Nếu học sinh áp lực kéo dài hãy khuyên các bạn tìm sự giúp đỡ từ thầy cô, cha mẹ và bạn bè.
 """
 
     try:
@@ -187,25 +182,22 @@ tìm sự giúp đỡ từ thầy cô, cha mẹ hoặc bạn bè.
         return "Xin lỗi, hệ thống đang bận."
 
 # ==============================
-# TEXT TO SPEECH
+# TTS VIETNAMESE
 # ==============================
 def speak(text):
 
     try:
 
-        speech = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+        speech=tempfile.NamedTemporaryFile(delete=False,suffix=".mp3")
 
-        tts = gTTS(
-            text=text,
-            lang="vi",
-            slow=False
-        )
+        tts=gTTS(text=text,lang="vi")
 
         tts.save(speech.name)
 
         return speech.name
 
     except:
+
         return None
 
 # ==============================
@@ -215,22 +207,26 @@ if role=="student":
 
     st.title("☁️ MindNest AI")
 
-    st.success("Xin chào 👋 MindNest luôn sẵn sàng lắng nghe bạn!")
-
-    st.info("AI là chatbot hỗ trợ sức khỏe tinh thần. Nếu áp lực kéo dài hãy nhờ đến thầy cô, ba mẹ và bạn bè nhé.")
+    st.info("AI hỗ trợ sức khỏe tinh thần. Nếu áp lực kéo dài hãy tìm sự giúp đỡ từ thầy cô và gia đình.")
 
     for m in st.session_state.messages:
 
         if m["role"]=="user":
+
             st.markdown(f"<div class='chat-user'>🙂 {m['content']}</div>",unsafe_allow_html=True)
+
         else:
+
             st.markdown(f"<div class='chat-bot'>☁️ {m['content']}</div>",unsafe_allow_html=True)
 
-    user_input = st.chat_input("Hãy chia sẻ cảm xúc của bạn...")
+    user_input=st.chat_input("Hãy chia sẻ cảm xúc của bạn...")
 
     if user_input:
 
-        st.session_state.messages.append({"role":"user","content":user_input})
+        st.session_state.messages.append({
+            "role":"user",
+            "content":user_input
+        })
 
         emotion=detect_emotion(user_input)
 
@@ -242,7 +238,10 @@ if role=="student":
 
         reply=ask_ai(user_input)
 
-        st.session_state.messages.append({"role":"assistant","content":reply})
+        st.session_state.messages.append({
+            "role":"assistant",
+            "content":reply
+        })
 
         audio=speak(reply)
 
@@ -262,19 +261,17 @@ if role=="teacher":
 
     if len(data)==0:
 
-        st.info("Chưa có dữ liệu")
+        st.warning("Chưa có dữ liệu")
 
         st.stop()
 
     df=pd.DataFrame(data)
 
-    st.subheader("🌈 Tổng quan cảm xúc")
+    st.subheader("Tổng quan cảm xúc")
 
-    chart=df["emotion"].value_counts()
+    st.bar_chart(df["emotion"].value_counts())
 
-    st.bar_chart(chart)
-
-    st.subheader("👩‍🎓 Theo học sinh")
+    st.subheader("Theo học sinh")
 
     students=df["student"].unique()
 
@@ -282,11 +279,8 @@ if role=="teacher":
 
     df_s=df[df["student"]==s]
 
-    st.subheader("Biểu đồ cảm xúc")
-
     st.bar_chart(df_s["emotion"].value_counts())
 
-    st.subheader("📄 Lịch sử")
+    st.subheader("Lịch sử")
 
     st.dataframe(df_s)
-
