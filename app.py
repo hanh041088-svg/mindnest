@@ -1,176 +1,287 @@
 import streamlit as st
-import json
 import os
+import json
+import pandas as pd
+import tempfile
 from datetime import datetime
-import speech_recognition as sr
+from openai import OpenAI
+from gtts import gTTS
 
-st.set_page_config(page_title="MindNest AI", page_icon="🧠")
+# ==============================
+# PAGE CONFIG
+# ==============================
+st.set_page_config(
+    page_title="MindNest AI",
+    page_icon="☁️",
+    layout="centered"
+)
 
-# =========================
-# Tạo thư mục lưu dữ liệu
-# =========================
-if not os.path.exists("data"):
-    os.makedirs("data")
+# ==============================
+# API KEY
+# ==============================
+api_key = st.secrets.get("OPENAI_API_KEY")
 
-CHAT_FILE = "data/chat_history.json"
+if not api_key:
+    st.error("Thiếu OPENAI_API_KEY trong secrets")
+    st.stop()
 
-if not os.path.exists(CHAT_FILE):
-    with open(CHAT_FILE, "w", encoding="utf-8") as f:
-        json.dump([], f)
+client = OpenAI(api_key=api_key)
 
-# =========================
-# Hàm lưu dữ liệu chat
-# =========================
-def save_chat(user, message, response):
+# ==============================
+# DATA FILE
+# ==============================
+DATA_FILE = "emotion_data.json"
 
-    with open(CHAT_FILE, "r", encoding="utf-8") as f:
-        data = json.load(f)
+if not os.path.exists(DATA_FILE):
+    with open(DATA_FILE,"w") as f:
+        json.dump([],f)
 
-    data.append({
-        "user": user,
-        "message": message,
-        "response": response,
-        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    })
+def save_emotion(data):
 
-    with open(CHAT_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    with open(DATA_FILE,"r") as f:
+        old=json.load(f)
 
-# =========================
-# AI trả lời đơn giản
-# =========================
-def mindnest_ai(prompt):
+    old.append(data)
 
-    return f"""
-📚 Gợi ý học tập cho bạn:
+    with open(DATA_FILE,"w") as f:
+        json.dump(old,f)
 
-{prompt}
+def load_data():
 
-MindNest AI chỉ là công cụ hỗ trợ học tập.
-Hãy tham khảo thêm ý kiến của thầy cô và ba mẹ trước khi đưa ra quyết định quan trọng.
-"""
+    with open(DATA_FILE) as f:
+        return json.load(f)
 
-# =========================
-# Nhận giọng nói
-# =========================
-def voice_to_text():
+# ==============================
+# USERS
+# ==============================
+with open("users.json","r",encoding="utf-8") as f:
+    USERS=json.load(f)
 
-    r = sr.Recognizer()
+# ==============================
+# SESSION
+# ==============================
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in=False
 
-    with sr.Microphone() as source:
-        st.info("🎤 Đang nghe...")
-        audio = r.listen(source)
+if "messages" not in st.session_state:
+    st.session_state.messages=[]
 
-    try:
-        text = r.recognize_google(audio, language="vi-VN")
-        return text
-    except:
-        return ""
-
-# =========================
+# ==============================
 # LOGIN
-# =========================
+# ==============================
+if not st.session_state.logged_in:
 
-if "login" not in st.session_state:
-    st.session_state.login = False
+    st.title("☁️ MindNest AI")
+    st.subheader("Hệ thống hỗ trợ sức khỏe tinh thần học sinh")
 
-if not st.session_state.login:
-
-    st.title("🧠 MindNest AI")
-
-    username = st.text_input("Tên học sinh")
+    username=st.text_input("Tên đăng nhập")
+    password=st.text_input("Mật khẩu",type="password")
 
     if st.button("Đăng nhập"):
 
-        if username.strip() != "":
-            st.session_state.login = True
-            st.session_state.user = username
+        if username in USERS and USERS[username]["password"]==password:
+
+            st.session_state.logged_in=True
+            st.session_state.username=username
+            st.session_state.role=USERS[username]["role"]
+
             st.rerun()
 
         else:
-            st.warning("Vui lòng nhập tên")
+
+            st.error("Sai tài khoản")
 
     st.stop()
 
-# =========================
-# GIAO DIỆN CHÍNH
-# =========================
+role=st.session_state.role
 
-st.title("🧠 MindNest AI")
-st.caption("AI hỗ trợ học tập cho học sinh")
+# ==============================
+# CSS
+# ==============================
+st.markdown("""
+<style>
 
-st.write(f"👋 Xin chào **{st.session_state.user}**")
+.stApp{
+background:linear-gradient(135deg,#ffd6ec,#e6ccff,#d6e4ff);
+}
 
-# =========================
-# CHAT HISTORY
-# =========================
+.chat-user{
+background:#c8f7ff;
+padding:10px;
+border-radius:10px;
+margin:5px;
+}
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+.chat-bot{
+background:white;
+padding:10px;
+border-radius:10px;
+margin:5px;
+}
 
-for msg in st.session_state.messages:
+</style>
+""",unsafe_allow_html=True)
 
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
+# ==============================
+# EMOTION DETECT
+# ==============================
+def detect_emotion(text):
 
-# =========================
-# VOICE INPUT
-# =========================
+    prompt=f"""
+Phân loại cảm xúc học sinh:
 
-col1, col2 = st.columns([4,1])
+happy
+sad
+anxious
+stress
+crisis
+neutral
 
-with col2:
-    if st.button("🎤"):
-        voice_text = voice_to_text()
+Câu: {text}
 
-        if voice_text != "":
-            st.session_state.voice_input = voice_text
-            st.rerun()
+Chỉ trả lời 1 từ
+"""
 
-# =========================
-# TEXT INPUT
-# =========================
+    try:
 
-prompt = st.chat_input("Nhập câu hỏi của bạn...")
+        r=client.responses.create(
+            model="gpt-4o-mini",
+            input=prompt
+        )
 
-if "voice_input" in st.session_state:
-    prompt = st.session_state.voice_input
-    del st.session_state.voice_input
+        return r.output_text.strip().lower()
 
-# =========================
-# XỬ LÝ CHAT
-# =========================
+    except:
 
-if prompt:
+        return "neutral"
 
-    st.session_state.messages.append({
-        "role": "user",
-        "content": prompt
-    })
+# ==============================
+# CHAT AI
+# ==============================
+def ask_ai(text):
 
-    with st.chat_message("user"):
-        st.write(prompt)
+    system="""
+Bạn là MindNest AI.
+Bạn hỗ trợ tâm lý học sinh.
 
-    response = mindnest_ai(prompt)
+Hãy nói nhẹ nhàng tích cực.
+Nếu học sinh áp lực kéo dài hãy khuyên các bạn tìm sự giúp đỡ từ thầy cô, cha mẹ và bạn bè.
+"""
 
-    with st.chat_message("assistant"):
-        st.write(response)
+    try:
 
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": response
-    })
+        r=client.responses.create(
+            model="gpt-4o-mini",
+            input=system + "\n" + text
+        )
 
-    # lưu dữ liệu
-    save_chat(st.session_state.user, prompt, response)
+        return r.output_text
 
-# =========================
-# FOOTER
-# =========================
+    except:
 
-st.divider()
+        return "Xin lỗi, hệ thống đang bận."
 
-st.caption(
-"MindNest AI chỉ là công cụ hỗ trợ học tập. "
-"Hãy tham khảo thêm ý kiến của thầy cô và ba mẹ."
-)
+# ==============================
+# TTS VIETNAMESE
+# ==============================
+def speak(text):
+
+    try:
+
+        speech=tempfile.NamedTemporaryFile(delete=False,suffix=".mp3")
+
+        tts=gTTS(text=text,lang="vi")
+
+        tts.save(speech.name)
+
+        return speech.name
+
+    except:
+
+        return None
+
+# ==============================
+# STUDENT MODE
+# ==============================
+if role=="student":
+
+    st.title("☁️ MindNest AI")
+
+    st.info("AI hỗ trợ sức khỏe tinh thần. Nếu áp lực kéo dài hãy tìm sự giúp đỡ từ thầy cô và gia đình.")
+
+    for m in st.session_state.messages:
+
+        if m["role"]=="user":
+
+            st.markdown(f"<div class='chat-user'>🙂 {m['content']}</div>",unsafe_allow_html=True)
+
+        else:
+
+            st.markdown(f"<div class='chat-bot'>☁️ {m['content']}</div>",unsafe_allow_html=True)
+
+    user_input=st.chat_input("Hãy chia sẻ cảm xúc của bạn...")
+
+    if user_input:
+
+        st.session_state.messages.append({
+            "role":"user",
+            "content":user_input
+        })
+
+        emotion=detect_emotion(user_input)
+
+        save_emotion({
+            "student":st.session_state.username,
+            "emotion":emotion,
+            "time":str(datetime.now())
+        })
+
+        reply=ask_ai(user_input)
+
+        st.session_state.messages.append({
+            "role":"assistant",
+            "content":reply
+        })
+
+        audio=speak(reply)
+
+        if audio:
+            st.audio(audio)
+
+        st.rerun()
+
+# ==============================
+# TEACHER DASHBOARD
+# ==============================
+if role=="teacher":
+
+    st.title("📊 Dashboard sức khỏe tinh thần")
+
+    data=load_data()
+
+    if len(data)==0:
+
+        st.warning("Chưa có dữ liệu")
+
+        st.stop()
+
+    df=pd.DataFrame(data)
+
+    st.subheader("Tổng quan cảm xúc")
+
+    st.bar_chart(df["emotion"].value_counts())
+
+    st.subheader("Theo học sinh")
+
+    students=df["student"].unique()
+
+    s=st.selectbox("Chọn học sinh",students)
+
+    df_s=df[df["student"]==s]
+
+    st.bar_chart(df_s["emotion"].value_counts())
+
+    st.subheader("Lịch sử")
+
+    st.dataframe(df_s)
+
