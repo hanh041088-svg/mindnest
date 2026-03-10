@@ -11,7 +11,7 @@ from gtts import gTTS
 # PAGE CONFIG
 # ==============================
 st.set_page_config(
-    page_title="MindNest AI",
+    page_title="MindNest AI - Chatbot hỗ trợ sức khỏe tinh thần của học sinh",
     page_icon="☁️",
     layout="centered"
 )
@@ -207,7 +207,7 @@ if role=="student":
 
     st.title("☁️ MindNest AI")
 
-    st.info("AI hỗ trợ sức khỏe tinh thần. Nếu áp lực kéo dài hãy tìm sự giúp đỡ từ thầy cô và gia đình.")
+    st.info("AI hỗ trợ sức khỏe tinh thần học sinh. Nếu áp lực kéo dài, em hãy tìm sự giúp đỡ từ thầy cô và gia đình nhé!")
 
     for m in st.session_state.messages:
 
@@ -284,4 +284,5 @@ if role=="teacher":
     st.subheader("Lịch sử")
 
     st.dataframe(df_s)
+
 
